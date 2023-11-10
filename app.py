@@ -7,25 +7,73 @@ import pandas as pd
 from apscheduler.schedulers.background import BackgroundScheduler
 from huggingface_hub import HfApi, snapshot_download
 
-from src.assets.css_html_js import custom_css
+from src.assets.css_html_js import custom_css, get_window_url_params
 from src.assets.text_content import TITLE, INTRODUCTION_TEXT
 from src.config import MODEL_DEFINITIONS
+
+import numpy as np
 
 ########### PRE APPLICATION STEPS ##################
 # Paths
 RESULTS_PATH = os.path.join("results_eval", "results_eval")
-OVERALL_SCORES = os.path.join(RESULTS_PATH, "results_eval", "episode-level", "tables", "scores_raw.csv")
-TABOO_SCORES = os.path.join(RESULTS_PATH, "taboo", "results_eval", "episode-level", "tables", "tabootaboo-overview-table.csv")
+OVERALL_SCORES = os.path.join(RESULTS_PATH, "results_eval", "episode-level", "tables", "bench-paper-table.csv")
+
+# Get list of games
+list_games = os.listdir(RESULTS_PATH)
+if os.path.exists(os.path.join(RESULTS_PATH, ".DS_Store")):
+    list_games.remove(".DS_Store")
+if os.path.exists(os.path.join(RESULTS_PATH, "results_eval")):
+    list_games.remove("results_eval")
+#Save a copy
+LIST_GAMES = list_games
+LIST_GAMES.append("All")
+
+# Format dataframe to change two rows per model to a single row
+def format_df(dataframe, col):
+    unique_cols = dataframe[col].unique()
+    unique_blocks = []
+    new_cols = ['model']
+    for u in unique_cols:
+        unique_df = dataframe[dataframe[col]==u]
+        unique_df = unique_df.drop(columns=['model', col])
+        unique_df_cols = unique_df.columns
+        [new_cols.append(str(c) + " (" + str(u) + ")" )for c in unique_df_cols]
+        unique_arr = unique_df.to_numpy()
+        unique_blocks.append(unique_arr)
+
+    init_arr = dataframe['model'].unique()
+    init_arr = init_arr.reshape((len(init_arr), 1))
+
+    for block in unique_blocks:
+        init_arr = np.hstack((init_arr, block))
+
+    formatted_df = pd.DataFrame(data=init_arr, columns=new_cols)
+
+    return formatted_df
 
 # Get Overall Results Dataframe
+global overall_df
 overall_df = pd.read_csv(OVERALL_SCORES)
+TOTAL_COLS = len(list(overall_df.columns)[2:])
+overall_df = overall_df.replace("nan (nan)", "- (-)")
+combine_col = 'metric'
+overall_df = format_df(overall_df, combine_col)
+show_cols = list(overall_df.columns)[1:]
 
-# Get Taboo DF for test
-taboo_df = pd.read_csv(TABOO_SCORES)
 
 
-# MAIN APPLICATION
-demo = gr.Blocks(css=custom_css)
+    
+# Update the dataframe based on selected columns etc..
+def update_table(df: pd.DataFrame, cols: list) -> pd.DataFrame:
+    add_model_col = ['model']
+    # Maintain order of the table
+    cols = add_model_col + cols
+    return overall_df[cols]
+    
+# Get last metric for all games
+selected_cols = show_cols[-TOTAL_COLS:]
+############# MAIN APPLICATION ######################
+demo = gr.Blocks()
 with demo:
     gr.HTML(TITLE)
     gr.Markdown(INTRODUCTION_TEXT, elem_classes="markdown-text")
@@ -40,139 +88,33 @@ with demo:
                             show_label=False,
                             elem_id="search-bar",
                         )
+
                     with gr.Row():
-                        gr.Dropdown(
-                                ["ran", "swam", "ate", "slept"], value=["swam", "slept"], multiselect=True, label="Activity", info=""
-                            )
-     
-#             leaderboard_table = gr.components.Dataframe(
-#                 value=leaderboard_df[
-#                     [AutoEvalColumn.model_type_symbol.name, AutoEvalColumn.model.name]
-#                     + shown_columns.value
-#                     + [AutoEvalColumn.dummy.name]
-#                 ],
-#                 headers=[
-#                     AutoEvalColumn.model_type_symbol.name,
-#                     AutoEvalColumn.model.name,
-#                 ]
-#                 + shown_columns.value
-#                 + [AutoEvalColumn.dummy.name],
-#                 datatype=TYPES,
-#                 max_rows=None,
-#                 elem_id="leaderboard-table",
-#                 interactive=False,
-#                 visible=True,
-#             )
+                        shown_columns = gr.CheckboxGroup(
+                            choices=show_cols,
+                            value=selected_cols,
+                            label="Select columns to show",
+                            elem_id="column-select",
+                            interactive=True,
+                        )     
+            leaderboard_table = gr.components.Dataframe(
+                value=overall_df[
+                    ['model'] + shown_columns.value
+                ],
+                max_rows=None,
+                elem_id="leaderboard-table",
+                interactive=False,
+                visible=True,
+            )
 
-#             # Dummy leaderboard for handling the case when the user uses backspace key
-#             hidden_leaderboard_table_for_search = gr.components.Dataframe(
-#                 value=original_df,
-#                 headers=COLS,
-#                 datatype=TYPES,
-#                 max_rows=None,
-#                 visible=False,
-#             )
-#             search_bar.submit(
-#                 update_table,
-#                 [
-#                     hidden_leaderboard_table_for_search,
-#                     shown_columns,
-#                     filter_columns_type,
-#                     filter_columns_precision,
-#                     filter_columns_size,
-#                     deleted_models_visibility,
-#                     search_bar,
-#                 ],
-#                 leaderboard_table,
-#             )
-#             shown_columns.change(
-#                 update_table,
-#                 [
-#                     hidden_leaderboard_table_for_search,
-#                     shown_columns,
-#                     filter_columns_type,
-#                     filter_columns_precision,
-#                     filter_columns_size,
-#                     deleted_models_visibility,
-#                     search_bar,
-#                 ],
-#                 leaderboard_table,
-#                 queue=True,
-#             )
-#             filter_columns_type.change(
-#                 update_table,
-#                 [
-#                     hidden_leaderboard_table_for_search,
-#                     shown_columns,
-#                     filter_columns_type,
-#                     filter_columns_precision,
-#                     filter_columns_size,
-#                     deleted_models_visibility,
-#                     search_bar,
-#                 ],
-#                 leaderboard_table,
-#                 queue=True,
-#             )
-#             filter_columns_precision.change(
-#                 update_table,
-#                 [
-#                     hidden_leaderboard_table_for_search,
-#                     shown_columns,
-#                     filter_columns_type,
-#                     filter_columns_precision,
-#                     filter_columns_size,
-#                     deleted_models_visibility,
-#                     search_bar,
-#                 ],
-#                 leaderboard_table,
-#                 queue=True,
-#             )
-#             filter_columns_size.change(
-#                 update_table,
-#                 [
-#                     hidden_leaderboard_table_for_search,
-#                     shown_columns,
-#                     filter_columns_type,
-#                     filter_columns_precision,
-#                     filter_columns_size,
-#                     deleted_models_visibility,
-#                     search_bar,
-#                 ],
-#                 leaderboard_table,
-#                 queue=True,
-#             )
-#             deleted_models_visibility.change(
-#                 update_table,
-#                 [
-#                     hidden_leaderboard_table_for_search,
-#                     shown_columns,
-#                     filter_columns_type,
-#                     filter_columns_precision,
-#                     filter_columns_size,
-#                     deleted_models_visibility,
-#                     search_bar,
-#                 ],
-#                 leaderboard_table,
-#                 queue=True,
-#             )
+            shown_columns.change(
+                update_table,
+                [leaderboard_table, shown_columns],
+                leaderboard_table,
+                queue=True,
+            )
 
-#         with gr.TabItem("📈 Metrics evolution through time", elem_id="llm-benchmark-tab-table", id=4):
-#             with gr.Row():
-#                 with gr.Column():
-#                     chart = create_metric_plot_obj(
-#                         plot_df,
-#                         ["Average ⬆️"],
-#                         HUMAN_BASELINES,
-#                         title="Average of Top Scores and Human Baseline Over Time",
-#                     )
-#                     gr.Plot(value=chart, interactive=False, width=500, height=500)
-#                 with gr.Column():
-#                     chart = create_metric_plot_obj(
-#                         plot_df,
-#                         ["ARC", "HellaSwag", "MMLU", "TruthfulQA"],
-#                         HUMAN_BASELINES,
-#                         title="Top Scores and Human Baseline Over Time",
-#                     )
-#                     gr.Plot(value=chart, interactive=False, width=500, height=500)
-#         with gr.TabItem("📝 About", elem_id="llm-benchmark-tab-table", id=2):
-#             gr.Markdown(LLM_BENCHMARKS_TEXT, elem_classes="markdown-text")
+
+    demo.load()
+demo.queue()
+demo.launch()
