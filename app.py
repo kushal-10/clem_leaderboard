@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import gradio as gr
 
 from src.assets.text_content import TITLE, INTRODUCTION_TEXT, LLM_BENCHMARKS_TEXT
-from src.utils import update_cols, split_cols, outbreak
+from src.utils import update_cols, split_cols
 
 ########### OVERALL LEADERBOARD ##################
 # Get Overall Results Dataframe
@@ -57,12 +57,6 @@ def plot_line(models, game):
             Y.append(y)
             labels.append(str(m))
 
-    print(df)
-    print("X : ##########################")
-    print(X)
-    print("Y : ##########################")
-    print(Y)
-
     fig = plt.figure()
     for i in range(len(Y)):
         if len(Y[i]) != 0:
@@ -84,42 +78,43 @@ with demo:
     gr.Markdown(INTRODUCTION_TEXT, elem_classes="markdown-text")
 
     with gr.Tabs(elem_classes="tab-buttons") as tabs:
-        with gr.TabItem("🏅 LLM Benchmark", elem_id="llm-benchmark-tab-table", id=0):
+        with gr.TabItem("🥇 Clem Leaderboard", elem_id="llm-benchmark-tab-table", id=0):
             with gr.Row():
-                with gr.Column():                
-                    with gr.Row():
-                        avg_columns = gr.CheckboxGroup(
-                            choices=AVG_COLS,
-                            value=SELECTED_COLS,
-                            label="Select columns to show : Averaged over all games",
-                            elem_id="column-select",
-                            interactive=True,
-                        )  
+                with gr.Column():   
                     with gr.Row():
                         ms_columns = gr.CheckboxGroup(
                             choices=MS_COLS,
                             value=[],
-                            label="Select columns to show : Main Scores for each game",
+                            label="Select columns to show : Main Scores for each game 🎖️",
                             elem_id="column-select",
                             interactive=True,
-                        )  
-                with gr.Column():                
+                        )               
                     with gr.Row():
-                        pl_columns = gr.CheckboxGroup(
-                            choices=PL_COLS,
-                            value=[],
-                            label="Select columns to show : %Played for each game",
+                        avg_columns = gr.CheckboxGroup(
+                            choices=AVG_COLS,
+                            value=SELECTED_COLS,
+                            label="Select columns to show : Averaged over all games 📐",
                             elem_id="column-select",
                             interactive=True,
-                        )  
+                        )   
+                with gr.Column():  
                     with gr.Row():
                         sd_columns = gr.CheckboxGroup(
                             choices=SD_COLS,
                             value=[],
-                            label="Select columns to show : Standard Deviation of Main Scores for each game",
+                            label="Select columns to show : Standard Deviation of Main Scores for each game 🎢",
                             elem_id="column-select",
                             interactive=True,
-                        )     
+                        )               
+                    with gr.Row():
+                        pl_columns = gr.CheckboxGroup(
+                            choices=PL_COLS,
+                            value=[],
+                            label="Select columns to show : %Played for each game 🔢",
+                            elem_id="column-select",
+                            interactive=True,
+                        )  
+                        
             leaderboard_table = gr.components.Dataframe(
                 value=overall_df[
                     [ALL_COLS[0]] + avg_columns.value + sd_columns.value + ms_columns.value + pl_columns.value
@@ -157,36 +152,15 @@ with demo:
                 queue=True,
             )
                 
-        with gr.TabItem("📝 About", elem_id="llm-benchmark-tab-table", id=2):
-            gr.Markdown(LLM_BENCHMARKS_TEXT, elem_classes="markdown-text")
-
-        with gr.TabItem("📊 Plotting", id=3):
-            with gr.Row():
-                selected_columns = gr.CheckboxGroup(
-                    ["USA", "Canada", "Mexico", "UK"], label="Countries", value=[]
-                )
-
-            with gr.Row():
-                # Output block for the plot
-                plot_output = gr.Plot()
-
-            # Attach the plot_handler to the button click event
-            selected_columns.change(
-                outbreak,
-                [selected_columns],
-                plot_output,
-                queue=True,
-            )
-
-        with gr.TabItem("📊 Plot Lines", id=4):
+        with gr.TabItem("📈 Plot Lines", id=4):
             with gr.Row():
                 game_cols = gr.Radio(
-                    GAME_COLS, label="Select Game"
+                    GAME_COLS, label="Select Game 🎮"
                 )
             with gr.Row():
                 model_cols = gr.CheckboxGroup(
                     MODEL_COLS, 
-                    label="Select Models", 
+                    label="Select Models 🤖", 
                     value=[],
                     elem_id="column-select",
                     interactive=True,
@@ -209,6 +183,9 @@ with demo:
                 plot_output,
                 queue=True
             )
+
+        with gr.TabItem("📋 About", elem_id="llm-benchmark-tab-table", id=2):
+            gr.Markdown(LLM_BENCHMARKS_TEXT, elem_classes="markdown-text")
 
             
 
