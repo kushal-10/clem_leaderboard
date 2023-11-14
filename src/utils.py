@@ -64,3 +64,5 @@ def outbreak(countries):
     plt.xlabel("Days since Day 0")
     plt.legend(countries)
     return fig
+
+
