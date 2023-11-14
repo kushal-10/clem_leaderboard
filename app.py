@@ -4,7 +4,7 @@ import numpy as np
 import gradio as gr
 
 from src.assets.text_content import TITLE, INTRODUCTION_TEXT, LLM_BENCHMARKS_TEXT
-from src.utils import update_cols, split_cols
+from src.utils import update_cols, split_cols, outbreak
 
 ########### PRE APPLICATION STEPS ##################
 # Get Overall Results Dataframe
@@ -109,9 +109,30 @@ with demo:
                 leaderboard_table,
                 queue=True,
             )
-
+                
         with gr.TabItem("📝 About", elem_id="llm-benchmark-tab-table", id=2):
             gr.Markdown(LLM_BENCHMARKS_TEXT, elem_classes="markdown-text")
+
+        with gr.TabItem("📊 Plotting", id=3):
+            with gr.Row():
+                selected_columns = gr.CheckboxGroup(
+                    ["USA", "Canada", "Mexico", "UK"], label="Countries", value=[]
+                )
+
+            with gr.Row():
+                # Output block for the plot
+                plot_output = gr.Plot()
+
+            # Attach the plot_handler to the button click event
+            selected_columns.change(
+                outbreak,
+                [selected_columns],
+                plot_output,
+                queue=True,
+            )
+
+
+        
 
 
     demo.load()
