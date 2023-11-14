@@ -53,17 +53,18 @@ def format_df(dataframe, col):
 
 # Get Overall Results Dataframe
 global overall_df
-overall_df = pd.read_csv(OVERALL_SCORES)
-TOTAL_COLS = len(list(overall_df.columns)[2:])
-overall_df = overall_df.replace("nan (nan)", "- (-)")
-combine_col = 'metric'
-overall_df = format_df(overall_df, combine_col)
-show_cols = list(overall_df.columns)[1:]
-
+# overall_df = pd.read_csv(OVERALL_SCORES)
+overall_df = pd.read_csv('results.csv')
+# TOTAL_COLS = len(list(overall_df.columns)[2:])
+# overall_df = overall_df.replace()
+# combine_col = 'metric'
+# overall_df = format_df(overall_df, combine_col)
+# show_cols = list(overall_df.columns)[1:]
+# show_cols = list(overall_df.columns)
 
 
     
-# Update the dataframe based on selected columns etc..
+# Update the dataframe based on selected columns
 def update_table(df: pd.DataFrame, cols: list) -> pd.DataFrame:
     add_model_col = ['model']
     # Maintain order of the table
@@ -71,7 +72,7 @@ def update_table(df: pd.DataFrame, cols: list) -> pd.DataFrame:
     return overall_df[cols]
     
 # Get last metric for all games
-selected_cols = show_cols[-TOTAL_COLS:]
+# selected_cols = show_cols[-TOTAL_COLS:]
 ############# MAIN APPLICATION ######################
 demo = gr.Blocks()
 with demo:
@@ -89,30 +90,35 @@ with demo:
                             elem_id="search-bar",
                         )
 
-                    with gr.Row():
-                        shown_columns = gr.CheckboxGroup(
-                            choices=show_cols,
-                            value=selected_cols,
-                            label="Select columns to show",
-                            elem_id="column-select",
-                            interactive=True,
-                        )     
+                    # with gr.Row():
+                    #     shown_columns = gr.CheckboxGroup(
+                    #         choices=show_cols,
+                    #         value=selected_cols,
+                    #         label="Select columns to show",
+                    #         elem_id="column-select",
+                    #         interactive=True,
+                    #     )     
+            # leaderboard_table = gr.components.Dataframe(
+            #     value=overall_df[
+            #         ['model'] + shown_columns.value
+            #     ],
+            #     elem_id="leaderboard-table",
+            #     interactive=False,
+            #     visible=True,
+            # )
             leaderboard_table = gr.components.Dataframe(
-                value=overall_df[
-                    ['model'] + shown_columns.value
-                ],
-                max_rows=None,
+                value=overall_df,
                 elem_id="leaderboard-table",
                 interactive=False,
                 visible=True,
             )
 
-            shown_columns.change(
-                update_table,
-                [leaderboard_table, shown_columns],
-                leaderboard_table,
-                queue=True,
-            )
+            # shown_columns.change(
+            #     update_table,
+            #     [leaderboard_table, shown_columns],
+            #     leaderboard_table,
+            #     queue=True,
+            # )
 
 
     demo.load()
