@@ -16,13 +16,14 @@ overall_df = update_cols(overall_df)
 ALL_COLS = list(overall_df.columns)
 SHOW_COLS = ALL_COLS[1:] 
 SELECTED_COLS = SHOW_COLS[:3]
+global COLS
 
 # Update the dataframe based on selected columns
 def update_table(cols: list) -> pd.DataFrame:
     add_model_col = [ALL_COLS[0]]
     # Maintain order of the table
-    cols = add_model_col + cols
-    return overall_df[cols]
+    COLS = add_model_col + cols
+    return overall_df[COLS]
 
 ############# MAIN APPLICATION ######################
 demo = gr.Blocks()
@@ -33,14 +34,7 @@ with demo:
     with gr.Tabs(elem_classes="tab-buttons") as tabs:
         with gr.TabItem("🏅 LLM Benchmark", elem_id="llm-benchmark-tab-table", id=0):
             with gr.Row():
-                with gr.Column():
-                    with gr.Row():
-                        search_bar = gr.Textbox(
-                            placeholder=" 🔍 Search for your model (separate multiple queries with `;`) and press ENTER...",
-                            show_label=False,
-                            elem_id="search-bar",
-                        )
-
+                with gr.Column():                
                     with gr.Row():
                         shown_columns = gr.CheckboxGroup(
                             choices=SHOW_COLS,
