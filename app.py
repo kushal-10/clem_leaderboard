@@ -3,7 +3,7 @@ import os
 import numpy as np
 import gradio as gr
 
-from src.assets.text_content import TITLE, INTRODUCTION_TEXT
+from src.assets.text_content import TITLE, INTRODUCTION_TEXT, LLM_BENCHMARKS_TEXT
 from src.utils import update_cols, split_cols
 
 ########### PRE APPLICATION STEPS ##################
@@ -12,12 +12,16 @@ global overall_df
 overall_df = pd.read_csv('results.csv')
 overall_df = update_cols(overall_df)
 
+
 # Divide columns
 ALL_COLS = list(overall_df.columns)
 SHOW_COLS, PL_COLS, MS_COLS, SD_COLS, AVG_COLS = split_cols(ALL_COLS)
 # Initially select only the Averaged scores
 SELECTED_COLS = AVG_COLS
 global COLS
+
+#Default sort by clemscore
+overall_df = overall_df.sort_values(by=[ALL_COLS[1]], ascending=False)
 
 # Update the dataframe based on selected columns
 def update_table(avg_cols: list, sd_cols: list, pl_cols: list, ms_cols: list) -> pd.DataFrame:
@@ -105,6 +109,9 @@ with demo:
                 leaderboard_table,
                 queue=True,
             )
+
+        with gr.TabItem("📝 About", elem_id="llm-benchmark-tab-table", id=2):
+            gr.Markdown(LLM_BENCHMARKS_TEXT, elem_classes="markdown-text")
 
 
     demo.load()
