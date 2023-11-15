@@ -121,10 +121,10 @@ with demo:
                 queue=True
             )
 
-        with gr.TabItem("🥇 Older Leaderboard", elem_id="llm-benchmark-tab-table-old", id=2):
+        with gr.TabItem("🔄 Previous Versions", elem_id="llm-benchmark-tab-table-prev", id=2):
             with gr.Row():
-                ver_selection = gr.Radio(
-                    names, label="Select Version 🎮", value=names[0]
+                ver_selection = gr.Dropdown(
+                    names, label="Select Version 🕹️", value=names[0]
                 )
             prev_table = gr.components.Dataframe(
                 value=prev_df,
