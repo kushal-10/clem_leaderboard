@@ -79,12 +79,77 @@ with demo:
 
     with gr.Tabs(elem_classes="tab-buttons") as tabs:
         with gr.TabItem("🥇 Clem Leaderboard", elem_id="llm-benchmark-tab-table", id=0):
+            with gr.Row():
+                with gr.Column():   
+                    with gr.Row():
+                        ms_columns = gr.CheckboxGroup(
+                            choices=MS_COLS,
+                            value=[],
+                            label="Select columns to show : Main Scores for each game 🎖️",
+                            elem_id="column-select",
+                            interactive=True,
+                        )               
+                    with gr.Row():
+                        avg_columns = gr.CheckboxGroup(
+                            choices=AVG_COLS,
+                            value=SELECTED_COLS,
+                            label="Select columns to show : Averaged over all games 📐",
+                            elem_id="column-select",
+                            interactive=True,
+                        )   
+                with gr.Column():  
+                    with gr.Row():
+                        sd_columns = gr.CheckboxGroup(
+                            choices=SD_COLS,
+                            value=[],
+                            label="Select columns to show : Standard Deviation of Main Scores for each game 🎢",
+                            elem_id="column-select",
+                            interactive=True,
+                        )               
+                    with gr.Row():
+                        pl_columns = gr.CheckboxGroup(
+                            choices=PL_COLS,
+                            value=[],
+                            label="Select columns to show : %Played for each game 🔢",
+                            elem_id="column-select",
+                            interactive=True,
+                        )  
                         
             leaderboard_table = gr.components.Dataframe(
-                value=overall_df,
+                value=overall_df[
+                    [ALL_COLS[0]] + avg_columns.value + sd_columns.value + ms_columns.value + pl_columns.value
+                ],
                 elem_id="leaderboard-table",
                 interactive=False,
                 visible=True,
+            )
+
+            avg_columns.change(
+                update_table,
+                [avg_columns, sd_columns, pl_columns, ms_columns],
+                leaderboard_table,
+                queue=True,
+            )
+
+            ms_columns.change(
+                update_table,
+                [avg_columns, sd_columns, pl_columns, ms_columns],
+                leaderboard_table,
+                queue=True,
+            )
+
+            pl_columns.change(
+                update_table,
+                [avg_columns, sd_columns, pl_columns, ms_columns],
+                leaderboard_table,
+                queue=True,
+            )
+
+            sd_columns.change(
+                update_table,
+                [avg_columns, sd_columns, pl_columns, ms_columns],
+                leaderboard_table,
+                queue=True,
             )
                 
         with gr.TabItem("📈 Plot Lines", id=4):
@@ -121,6 +186,11 @@ with demo:
 
         with gr.TabItem("📋 About", elem_id="llm-benchmark-tab-table", id=2):
             gr.Markdown(LLM_BENCHMARKS_TEXT, elem_classes="markdown-text")
+
+            
+
+        
+
 
     demo.load()
 demo.queue()
