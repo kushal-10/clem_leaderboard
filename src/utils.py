@@ -1,7 +1,4 @@
-import gradio as gr
-from math import sqrt
-import matplotlib.pyplot as plt
-import numpy as np
+import os
 import pandas as pd
 
 def update_cols(df: pd.DataFrame) -> pd.DataFrame:
@@ -41,28 +38,21 @@ def split_cols(LIST: list):
     return SHOW_COLS, PL_COLS, MS_COLS, SD_COLS, AVG_COLS
 
 
-def outbreak(countries):
-    r = 1
-    social_distancing = False
-    month = "January"
-    months = ["January", "February", "March", "April", "May"]
-    m = months.index(month)
-    start_day = 30 * m
-    final_day = 30 * (m + 1)
-    x = np.arange(start_day, final_day + 1)
-    pop_count = {"USA": 350, "Canada": 40, "Mexico": 300, "UK": 120}
-    if social_distancing:
-        r = sqrt(r)
-    df = pd.DataFrame({"day": x})
-    for country in countries:
-        df[country] = x ** (r) * (pop_count[country] + 1)
+def get_prev():
+    list_versions = os.listdir(os.path.join('versions', 'previous'))
+    csv_file_names = [os.path.splitext(file)[0] for file in list_versions if file.endswith('.csv')]
+    dfs = []
+    version_names = []
+    for i in range(len(list_versions)):
+        path = os.path.join('versions', 'previous', list_versions[i])
+        df = pd.read_csv(path)
+        df = update_cols(df)
+        df = df.sort_values(by=['Clemscore'], ascending=False)
+        dfs.append(df)
+        version_names.append(csv_file_names[i])
 
-    fig = plt.figure()
-    plt.plot(df["day"], df[countries].to_numpy())
-    plt.title("Outbreak in " + month)
-    plt.ylabel("Cases")
-    plt.xlabel("Days since Day 0")
-    plt.legend(countries)
-    return fig
+    print(dfs, version_names)
+    print(version_names.index('v0.9'))
+    return dfs, version_names
 
-
+get_prev()

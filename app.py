@@ -2,36 +2,38 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import gradio as gr
+import os
 
 from src.assets.text_content import TITLE, INTRODUCTION_TEXT, LLM_BENCHMARKS_TEXT
-from src.utils import update_cols, split_cols
+from src.utils import update_cols, get_prev
 
 ########### OVERALL LEADERBOARD ##################
 # Get Overall Results Dataframe
 global overall_df
-overall_df = pd.read_csv('results.csv')
+overall_df = pd.read_csv(os.path.join('versions', 'latest', 'results.csv'))
 overall_df = update_cols(overall_df)
-
-# Divide columns
 ALL_COLS = list(overall_df.columns)
-SHOW_COLS, PL_COLS, MS_COLS, SD_COLS, AVG_COLS = split_cols(ALL_COLS)
-# Initially select only the Averaged scores
-SELECTED_COLS = AVG_COLS
-global COLS
 
 #Default sort by clemscore
 overall_df = overall_df.sort_values(by=[ALL_COLS[1]], ascending=False)
 
-# Update the dataframe based on selected columns
-def update_table(avg_cols: list, sd_cols: list, pl_cols: list, ms_cols: list) -> pd.DataFrame:
-    add_model_col = [ALL_COLS[0]]
-    # Maintain order of the table
-    COLS = add_model_col + avg_cols + ms_cols + pl_cols + sd_cols
-    return overall_df[COLS]
+
+########## Previous VERSIONS ###########################
+dfs, names = get_prev()
+
+global prev_df
+
+prev_df = dfs[0]
+
+def select_prev_df(name):
+    ind = names.index(name)
+    prev_df = dfs[ind]
+    return prev_df
+
 
 ############# PLOTS ######################
 global plot_df
-plot_df = pd.read_csv('detailed-bench-stats.csv')
+plot_df = pd.read_csv(os.path.join('versions', 'latest', 'detailed-bench-stats.csv'))
 GAME_COLS = list(plot_df['game'].unique())
 global MODEL_COLS
 MODEL_COLS = list(plot_df['model'].unique())
@@ -87,7 +89,7 @@ with demo:
                 visible=True,
             )
                 
-        with gr.TabItem("📈 Plot Lines", id=4):
+        with gr.TabItem("📈 Plot", id=1):
             with gr.Row():
                 game_cols = gr.Radio(
                     GAME_COLS, label="Select Game 🎮"
@@ -119,8 +121,25 @@ with demo:
                 queue=True
             )
 
-        with gr.TabItem("📋 About", elem_id="llm-benchmark-tab-table", id=2):
-            gr.Markdown(LLM_BENCHMARKS_TEXT, elem_classes="markdown-text")
+        with gr.TabItem("🥇 Older Leaderboard", elem_id="llm-benchmark-tab-table-old", id=2):
+            with gr.Row():
+                ver_selection = gr.Radio(
+                    names, label="Select Version 🎮", value=names[0]
+                )
+            prev_table = gr.components.Dataframe(
+                value=prev_df,
+                elem_id="leaderboard-table",
+                interactive=False,
+                visible=True,
+            )
+
+            ver_selection.change(
+                select_prev_df,
+                [ver_selection],
+                prev_table,
+                queue=True
+            )
+
 
     demo.load()
 demo.queue()
