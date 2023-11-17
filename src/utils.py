@@ -1,6 +1,9 @@
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
+from src.assets.text_content import SHORT_NAMES
 
 def update_cols(df: pd.DataFrame) -> pd.DataFrame:
     '''
@@ -115,9 +118,71 @@ def get_data(path, flag):
             previous_df.pop(0)
             previous_vname.pop(0)
 
-        print(latest_df[0].columns, previous_df[0].columns)
         return latest_df, latest_vname, previous_df, previous_vname
     
     return None
 
-# get_data('versions', True)
+
+# ['Model', 'Clemscore', 'All(Played)', 'All(Quality Score)']
+def compare_plots(df: pd.DataFrame, LIST: list):
+    '''
+    Quality Score v/s % Played plot by selecting models
+    Args:
+        LIST: The list of models to show in the plot, updated from frontend
+    Returns:
+        fig: The plot
+    '''
+    short_names = label_map(LIST)
+
+    list_columns = list(df.columns)
+    df = df[df[list_columns[0]].isin(LIST)]
+
+    X = df[list_columns[2]]
+    fig, ax = plt.subplots()
+    for model in LIST:
+        short = short_names[model][0]
+        same_flag = short_names[model][1]
+        model_df = df[df[list_columns[0]] == model]
+        x = model_df[list_columns[2]]
+        y = model_df[list_columns[3]]
+        color = plt.cm.rainbow(x / max(X))  # Use a colormap for different colors
+        plt.scatter(x, y, color=color)
+        if same_flag:
+            plt.annotate(f'{short}', (x, y), textcoords="offset points", xytext=(0, -15), ha='center', rotation=0)
+        else:
+            plt.annotate(f'{short}', (x, y), textcoords="offset points", xytext=(20, -3), ha='center', rotation=0)
+    ax.grid(which='both', color='grey', linewidth=1, linestyle='-', alpha=0.2)
+    ax.set_xticks(np.arange(0,110,10))
+    plt.xlim(-10, 110)
+    plt.ylim(-10, 110)
+    plt.xlabel('% Played')
+    plt.ylabel('Quality Score')
+    plt.title('Overview of benchmark results')
+    plt.show()
+
+    return fig
+
+
+def label_map(model_list):
+    '''
+    Generate a map from long names to short names, to plot them in frontend graph
+    Define the short names in src/assets/text_content.py
+    Args: 
+        model_list: A list of long model names
+    Returns:
+        short_name: A map from long to list of short name + indication if models are same or different
+    '''
+    short_name = {}
+    for model_name in model_list:
+        splits = model_name.split('--')
+        if len(splits) != 1:
+            splits[0] = SHORT_NAMES[splits[0] + '-']
+            splits[1] = SHORT_NAMES[splits[1] + '-']
+            # Define the short name and indicate there are two different models
+            short_name[model_name] = [splits[0] + '--' + splits[1], 0]
+        else:
+            splits[0] = SHORT_NAMES[splits[0] + '-']
+            # Define the short name and indicate both models are same 
+            short_name[model_name] = [splits[0], 1]
+
+    return short_name
