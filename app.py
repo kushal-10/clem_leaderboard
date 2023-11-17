@@ -1,8 +1,4 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import gradio as gr
-import os
 
 from src.assets.text_content import TITLE, INTRODUCTION_TEXT
 from src.utils import get_data, compare_plots, filter_search
@@ -19,11 +15,6 @@ def select_prev_df(name):
     prev_df = previous_df[ind]
     return prev_df
 
-############################# Search Bar ##################################
-global searched_df, query
-# searched_df = filter_search(latest_df[0], query)
-
-# query = 0
 ############################ For Plots ####################################
 global plot_df, MODEL_COLS
 plot_df = latest_df[0]
