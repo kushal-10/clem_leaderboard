@@ -5,7 +5,7 @@ import gradio as gr
 import os
 
 from src.assets.text_content import TITLE, INTRODUCTION_TEXT
-from src.utils import get_data, compare_plots
+from src.utils import get_data, compare_plots, filter_search
 
 ############################ For Leaderboards #############################
 DATA_PATH = 'versions'
@@ -19,12 +19,16 @@ def select_prev_df(name):
     prev_df = previous_df[ind]
     return prev_df
 
+############################# Search Bar ##################################
+global searched_df, query
+# searched_df = filter_search(latest_df[0], query)
+
+# query = 0
 ############################ For Plots ####################################
 global plot_df, MODEL_COLS
 plot_df = latest_df[0]
 MODEL_COLS = list(plot_df['Model'].unique())
 
-# compare_plots(plot_df, ['claude-v1.3', 'falcon-40b', 'gpt-4', 'gpt-3.5-turbo--gpt-4', 'gpt-4--gpt-3.5-turbo', 'koala-13b', 'text-davinci-003'])
 
 ############# MAIN APPLICATION ######################
 demo = gr.Blocks()
@@ -34,6 +38,12 @@ with demo:
 
     with gr.Tabs(elem_classes="tab-buttons") as tabs:
         with gr.TabItem("🥇 Clem Leaderboard", elem_id="llm-benchmark-tab-table", id=0):
+            with gr.Row():
+                search_bar = gr.Textbox(
+                    placeholder=" 🔍 Search for models - separate multiple queries with `;` and press ENTER...",
+                    show_label=False,
+                    elem_id="search-bar",
+                )
                         
             leaderboard_table = gr.components.Dataframe(
                 value=latest_df[0],
@@ -41,7 +51,20 @@ with demo:
                 interactive=False,
                 visible=True,
             )
+
+            dummy_leaderboard_table = gr.components.Dataframe(
+                value=latest_df[0],
+                elem_id="leaderboard-table",
+                interactive=False,
+                visible=False,
+            )
                 
+            search_bar.submit(
+                filter_search,
+                [dummy_leaderboard_table, search_bar],
+                leaderboard_table,
+                queue=True
+            )
         with gr.TabItem("📈 Plot", id=3):
             with gr.Row():
                 model_cols = gr.CheckboxGroup(

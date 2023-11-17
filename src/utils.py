@@ -69,7 +69,7 @@ def process_df(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-def get_data(path, flag):
+def get_data(path: str, flag: bool):
     '''
     Get a list of all version names and respective Dataframes 
     Args: 
@@ -163,7 +163,7 @@ def compare_plots(df: pd.DataFrame, LIST: list):
     return fig
 
 
-def label_map(model_list):
+def label_map(model_list: list) -> dict:
     '''
     Generate a map from long names to short names, to plot them in frontend graph
     Define the short names in src/assets/text_content.py
@@ -186,3 +186,32 @@ def label_map(model_list):
             short_name[model_name] = [splits[0], 1]
 
     return short_name
+
+def filter_search(df: pd.DataFrame, query: str) -> pd.DataFrame:
+    '''
+    Filter the dataframe based on the search query
+    Args:
+        df: Unfiltered dataframe
+        query: a string of queries separated by ";"
+    Return:
+        filtered_df: Dataframe containing searched queries in the 'Model' column 
+    '''
+    queries = query.split(';')
+    list_cols = list(df.columns)
+    df_len = len(df)
+    filtered_models = []
+    models_list = list(df[list_cols[0]])
+    for q in queries:
+        q = q.lower()
+        for i in range(df_len):
+            model_name = models_list[i]
+            if q in model_name.lower():
+                filtered_models.append(model_name) # Append model names containing query q
+
+    filtered_df = df[df[list_cols[0]].isin(filtered_models)]
+
+    if query == "":
+        return df
+
+    return filtered_df
+    
