@@ -52,6 +52,7 @@ with demo:
                 visible=True,
             )
 
+            # Add a dummy leaderboard to handle search queries from the latest_df and not update latest_df
             dummy_leaderboard_table = gr.components.Dataframe(
                 value=latest_df[0],
                 elem_id="leaderboard-table",
@@ -96,11 +97,32 @@ with demo:
                 ver_selection = gr.Dropdown(
                     previous_vname, label="Select Version 🕹️", value=previous_vname[0]
                 )
+            with gr.Row():
+                search_bar_prev = gr.Textbox(
+                    placeholder=" 🔍 Search for models - separate multiple queries with `;` and press ENTER...",
+                    show_label=False,
+                    elem_id="search-bar-2",
+                )
+
             prev_table = gr.components.Dataframe(
                 value=prev_df,
                 elem_id="leaderboard-table",
                 interactive=False,
                 visible=True,
+            )
+
+            dummy_prev_table = gr.components.Dataframe(
+                value=prev_df,
+                elem_id="leaderboard-table",
+                interactive=False,
+                visible=False,
+            )
+
+            search_bar_prev.submit(
+                filter_search,
+                [dummy_prev_table, search_bar_prev],
+                prev_table,
+                queue=True
             )
 
             ver_selection.change(
@@ -109,7 +131,6 @@ with demo:
                 prev_table,
                 queue=True
             )
-
 
     demo.load()
 demo.queue()
